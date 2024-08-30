@@ -1,0 +1,11 @@
+[Unit]
+Description=Smart Camera Trap
+After=network.target network-online.target set-IP-service.service
+
+[Service]
+ExecStartPre=/home/pi/smart_camera_trap_research/scripts/service_app/pre_service.sh
+ExecStart=/home/pi/smart_camera_trap_research/scripts/service_app/Launch_service.sh
+WorkingDirectory=/home/pi/smart_camera_trap_research/
+
+[Install]
+WantedBy=multi-user.target

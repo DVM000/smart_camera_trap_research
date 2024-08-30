@@ -1,0 +1,11 @@
+#https://stackoverflow.com/questions/15320267/package-opencv-was-not-found-in-the-pkg-config-search-path
+prefix=/home/pi/smart_camera_trap_research/scripts/install_libraries/opencv
+exec_prefix=${prefix}
+includedir=${prefix}
+libdir=${exec_prefix}/build/lib/
+
+Name: opencv
+Description: The opencv library
+Version: 4.x.x
+Cflags: -I${includedir}/build -I${includedir}/include/ -I/usr/local/include/opencv4/
+Libs: -L${libdir} -lopencv_dnn -lopencv_videoio  -lopencv_imgcodecs -lopencv_calib3d -lopencv_imgproc -lopencv_core -lopencv_ml -lopencv_features2d -lopencv_objdetect -lopencv_flann -lopencv_video -lopencv_highgui

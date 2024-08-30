@@ -1,0 +1,19 @@
+- Take a set of images upon PIR activation, and classify them into ./OUTPUT/Animal or ./OUTPUT/Blank
+- Save log file
+- Send MQTT msgs with information
+- Stop functionality during night (recognized from images collected)
+- Take a image each SEC_TEST seconds for on-device training (if PIR does not detect action), and store in ./DATASET/FRAMES/
+- Re-train each X=CALIBRATION_PERIOD minutes if needed:
+    -> check if needed: take frames during 10 segs at FPS and analyze with CNN. Re-train if 75% imgs belong to TARGET_LABELS
+        -- if not re-train: reduce X/2 
+        -- if X was reduced 4 times: reset X
+    -> imgs used for recalibration: 
+           - create 'experience' folder with images taken each SEC_TEST and store into ./DATASET/img_data_XXX
+           - create training dataset ./DATASET/Train from last experience folders img_data_XXX by performing random selection with percentages + synthetic data
+
+
+    1st training                               2nd training                             3rd training                             4th training
+      |---|----------------------------------------|----------------------------------------|----------------------------------------|----------------------------------------...
+   img_data_000         img_data_001                             img_data_002                              img_data_003         
+                                           Train with 000-001                       Train with 000-002                       Train with 000-003             
+                                              
