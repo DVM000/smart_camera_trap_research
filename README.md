@@ -1,4 +1,9 @@
-# Smart camera traps Research
+# Research on smart camera traps
+
+## Hardware
+
+Compatible with Raspberry Pi devices. Tested, in particular, on Raspberry Pi 3B, Raspberry Pi 4B, and Raspberry Pi Zero 2W.
+
 
 ## Installation
 
@@ -65,7 +70,9 @@ sudo reboot
 
 ## Outputs
 
- - Application log will be `./OUTPUT/App_log_<date>` .
+ - Application log will be `./OUTPUT/App_log_<date>` . This log contains chronologically-ordered information about camera status, 
+    PIR activation, animal detection, re-training status, night detection, etc (including timestamps);   
+    as well as possible source or errors encountered during execution.
  - Classified frames will be located into `./OUTPUT/<classname>` folders. 
  - Periodically collected frames for on-device training are stored into `./DATASET/FRAMES/`.
  - Training image datasets will be built into `./DATASET/img_data_XXX` folders.
