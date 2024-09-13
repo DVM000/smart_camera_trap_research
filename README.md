@@ -1,5 +1,26 @@
 # Research on smart camera traps
 
+## Citing
+
+Please cite our paper if you find this repository useful.
+
+```
+@article{VELASCOMONTERO2024102815,
+  title = {Reliable and efficient integration of AI into camera traps for smart wildlife monitoring based on continual learning},
+  journal = {Ecological Informatics},
+  volume = {83},
+  pages = {102815},
+  year = {2024},
+  issn = {1574-9541},
+  doi = {https://doi.org/10.1016/j.ecoinf.2024.102815},
+  url = {https://www.sciencedirect.com/science/article/pii/S1574954124003571},
+  author = {Delia Velasco-Montero and Jorge Fernández-Berni and Ricardo Carmona-Galán and Ariadna Sanglas and Francisco Palomares},
+}
+```
+
+https://www.sciencedirect.com/science/article/pii/S1574954124003571
+
+
 ## Hardware
 
 Compatible with Raspberry Pi devices. Tested, in particular, on Raspberry Pi 3B, Raspberry Pi 4B, and Raspberry Pi Zero 2W.

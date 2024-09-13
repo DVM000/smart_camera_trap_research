@@ -10,43 +10,35 @@ def add_top_classifier(base_model, NUM_OUTPUTS, functional_model=False):
 
     features = base_model.output
     print('[Info] Base network outputs:')
-    print(str(features.shape)+ '\t <- network without top')
+    print(str(features.shape)+ '\t <- network without top') # solo es necesario Global Avg Pool si hay fmpaps con H,W >1
+    
+    # Apply global average pooling if features are more than 2D
     if len(features.shape) >2:
         global_average_layer = tf.keras.layers.GlobalAveragePooling2D()
-        feature_average = global_average_layer(features)
-        print(str(feature_average.shape) + '\t <- global avg pooling')
+        features = global_average_layer(features)
+        print(str(features.shape) + '\t <- global avg pooling')
 
-        prediction_layer = tf.keras.layers.Dense(NUM_OUTPUTS)
-        predictions = prediction_layer(feature_average)
-        print(str(predictions.shape) + '\t <- new top outputs\n') 
+    # Prediction layer
+    prediction_layer = tf.keras.layers.Dense(NUM_OUTPUTS)
+    predictions = prediction_layer(features)
+    print(str(predictions.shape) + '\t <- new top outputs\n') 
 
-        if functional_model:
-            print('[Info] Creating tf.keras Functional model')
-            from tensorflow.keras.models import Model
-            model = Model(inputs=base_model.input, outputs=predictions)
-        else:
-            print('[Info] Creating tf.keras Sequential model')
+    if functional_model:
+        print('[Info] Creating tf.keras Functional model')
+        from tensorflow.keras.models import Model
+        model = Model(inputs=base_model.input, outputs=predictions)
+    else:
+        print('[Info] Creating tf.keras Sequential model')
+        # Only add GlobalAveragePooling2D to Sequential if features are not 1D
+        if len(base_model.output.shape) > 2:
             model = tf.keras.Sequential([
                         base_model,
                         global_average_layer,
-                        prediction_layer
-                        ])
-
-    else:
-        prediction_layer = tf.keras.layers.Dense(NUM_OUTPUTS)
-        predictions = prediction_layer(feature_average)
-        print(str(predictions.shape) + '\t <- new top outputs\n')
-
-        if functional_model:
-            print('[Info] Creating tf.keras Functional model')
-            from tensorflow.keras.models import Model
-            model = Model(inputs=base_model.input, outputs=predictions)
+                        prediction_layer ])
         else:
-            print('[Info] Creating tf.keras Sequential model')
             model = tf.keras.Sequential([
                         base_model,
-                        prediction_layer
-                        ])
+                        prediction_layer ])
 
     return model
 

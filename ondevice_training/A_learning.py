@@ -132,12 +132,13 @@ for layer in model.layers[:Nbaselayers]:
 optimizer = eval('tf.keras.optimizers.'+OPT)
 
 from tensorflow.keras import backend as K
+f_logits = not FROM_H5
 if NUM_OUTPUTS == 1:
-  lossfun = tf.keras.losses.BinaryCrossentropy(from_logits=True) # True if softmax not applied
+  lossfun = tf.keras.losses.BinaryCrossentropy(from_logits=f_logits) # True if softmax not applied
   metr = ['accuracy', 
            tf.keras.metrics.TopKCategoricalAccuracy(k=5, name='Top5_acc')] # this does not matter, but included here for ease of code
 else:
-  lossfun = tf.keras.losses.CategoricalCrossentropy(from_logits=True) # True if softmax not applied
+  lossfun = tf.keras.losses.CategoricalCrossentropy(from_logits=f_logits) # True if softmax not applied
   metr =[ tf.keras.metrics.CategoricalAccuracy(name='accuracy'), # Top1-acc
           tf.keras.metrics.TopKCategoricalAccuracy(k=5, name='Top5_acc')]
 
