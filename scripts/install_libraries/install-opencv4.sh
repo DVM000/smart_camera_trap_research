@@ -40,8 +40,15 @@ read -p "[Info] You must increase swap size. Change the line CONF_SWAPSIZE=100 t
 sudo nano /etc/dphys-swapfile
 sudo service dphys-swapfile restart
 
+FREE_MEM="$(free -m | awk '/^Mem/ {print $2}')"
+# Use "-j 4" only memory is larger than 2GB
+if [[ "FREE_MEM" -gt "2000" ]]; then
+  NO_JOB=4
+else
+  NO_JOB=1
+fi
 cd opencv-${OPENCV_VERSION}/build
-make -j4 
+make -j ${NO_JOB}
   # in case of stopping, use: make -j2
 sudo make install
 sudo ldconfig
