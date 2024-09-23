@@ -6,7 +6,7 @@
 - USB battery
 - LED (optional)
 
-![Hardware+software-image](hardware+software.jpeg?raw=true "Title")
+![Hardware+software-image](hardware+software.jpg?raw=true "Title")
  
 ## Wiring
 
