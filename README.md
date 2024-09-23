@@ -98,8 +98,9 @@ sudo reboot
  - Periodically collected frames for on-device training are stored into `./DATASET/FRAMES/`.
  - Training image datasets will be built into `./DATASET/img_data_XXX` folders.
 
+## Advanced operation and hardware instructions
 
-
+Take a look at doc folder.
 
 
 
