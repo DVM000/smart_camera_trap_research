@@ -66,6 +66,6 @@ pkg-config --cflags --libs opencv # check libraries
 # remove zip
 rm ${OPENCV_VERSION}.zip
 
-read -p "[Info] You can restore swap size. Change the line CONF_SWAPSIZE=1024 to CONF_SWAPSIZE=100, save and exit. Press Enter to continue." CONTINUE
-sudo nano /etc/dphys-swapfile
-sudo service dphys-swapfile restart
+#read -p "[Info] You can restore swap size. Change the line CONF_SWAPSIZE=1024 to CONF_SWAPSIZE=100, save and exit. Press Enter to continue." CONTINUE
+#sudo nano /etc/dphys-swapfile
+#sudo service dphys-swapfile restart
