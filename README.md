@@ -100,7 +100,7 @@ sudo reboot
 
 ## Advanced operation and hardware instructions
 
-Take a look at .doc/ folder.
+Take a look at [here](./doc/README.md).
 
 
 
