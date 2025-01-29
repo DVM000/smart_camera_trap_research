@@ -31,24 +31,19 @@ TRAIN = args.no_train
 H = args.H
 W = args.W
 
-
+# Capture image and save into file
+def capture_image(filename, width, height, quality=100):
+    # libcamera command
+    command = f"libcamera-still --nopreview -t 100 --width {width} --height {height} --quality {quality} --output {filename} > /dev/null 2>&1"
+    result = os.system(command)
+    if result != 0:
+        print(WARNING + "[ERROR]: Cannot capture image" + ENDC)
+        
 # PIR Sensor
 if PIR_PIN>-1:
     gpio.setmode(gpio.BCM)
     gpio.setup(PIR_PIN, gpio.IN, pull_up_down=gpio.PUD_DOWN)           # Set our input pin to be an input
     print('Using PIR sensor connected at pin #{}'.format(PIR_PIN) )
-
-# Camera
-cam = cv2.VideoCapture(NUM)
-print('Accessing camera {}'.format(NUM))
-cam.set(cv2.CAP_PROP_FRAME_WIDTH, W)
-cam.set(cv2.CAP_PROP_FRAME_HEIGHT, H)
-
-if cam.isOpened():
-  print('Camera {} open'.format(NUM))
-else:
-  print('Cannot access to camera ' + str(NUM))
-  sys.exit(1)
   
 if not os.path.isdir(FOLDER+'/Blank/'):
     os.makedirs(FOLDER+'/Blank/')
@@ -63,11 +58,10 @@ try:
             print('PIR detection...waiting...')
             sleep(1)
             
-        r, frame = cam.read()
         now = datetime.datetime.now()
         img_name = FOLDER + '/Blank/{}_{:03d}.jpg'.format(now.strftime("%Y-%m-%d_%H:%M:%S"),n) #'%A_%B__%d_%H:%M:%S_%Y'), n)
-        cv2.imwrite(img_name, frame)
-        print('  Read frame #{} {}x{} --> {}'.format(n,frame.shape[0],frame.shape[1],img_name))
+        capture_image(img_name, W, H)
+        print('  Read frame #{} {}x{} --> {}'.format(n,W,H,img_name))
         
         sleep(s_sleep)
         n += 1
@@ -75,8 +69,6 @@ try:
 except KeyboardInterrupt:
     print('END')
 
-cam.release()
-print('Camera {} closed'.format(NUM))
 
 # clean up GPIOs
 gpio.cleanup()
