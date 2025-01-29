@@ -34,8 +34,10 @@ Compatible with Raspberry Pi devices. Tested, in particular, on Raspberry Pi 3B,
 git clone https://www.github.com/DVM000/smart_camera_trap_research.git 
 ```
 
+ - **Note**: this code was developed for `buster` operating system (tested on kernel Linux aarch64 32 bits). If you are using new releases, please change repository branch: `git checkout bookworm-OS` (tested on kernel Linux aarch64 64 bits)
  - Installation scripts assume that code is located at `/home/pi/smart_camera_trap_research/`
  - You must give execution permission to all scripts.
+ - This code was developed for `buster`
 
 2. **Install dependences** (it will take a long while):
 

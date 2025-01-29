@@ -1,6 +1,9 @@
 #! /bin/bash
 
 cd install_libraries
+
+sudo apt-install libcamera-dev
+
 read -p  "1) Installing OpenCV. Press Enter to Continue" A
 ./install-opencv4.sh
 

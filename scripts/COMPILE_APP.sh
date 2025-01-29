@@ -9,6 +9,6 @@ trap on_error ERR
 [ -d ./apps ] || mkdir apps
 
 # Compile App-test2b with OpenCV:
-g++ src/APP.cpp -o apps/APP -lpigpio -lrt -lpthread `pkg-config --cflags --libs opencv`
+g++ src/APP.cpp -o apps/APP -lpigpio -lrt -lpthread `pkg-config --cflags --libs opencv` `pkg-config --cflags --libs libcamera`
 
 

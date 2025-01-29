@@ -12,31 +12,37 @@ if [[ "$CONTINUE" == "y" || "$CONTINUE" == "Y" ]]; then
 	sudo apt-get autoremove
 
 	sudo apt-get update && sudo apt-get upgrade
-	sudo apt-get install -y build-essential cmake pkg-config
-	sudo apt-get install -y libjpeg-dev libtiff5-dev libjasper-dev libpng12-dev
-	sudo apt-get install -y libavcodec-dev libavformat-dev libswscale-dev libv4l-dev
-	sudo apt-get install -y libxvidcore-dev libx264-dev
-	sudo apt-get install -y libgtk2.0-dev libgtk-3-dev
-	sudo apt-get install libcanberra-gtk*
-	sudo apt-get install -y libatlas-base-dev gfortran
-	sudo apt-get install -y python2.7-dev python3-dev
+	sudo apt-get install build-essential cmake git unzip pkg-config
+        sudo apt-get install libjpeg-dev libpng-dev
+        sudo apt-get install libavcodec-dev libavformat-dev libswscale-dev
+        sudo apt-get install libgtk2.0-dev libcanberra-gtk* libgtk-3-dev
+        sudo apt-get install libgstreamer1.0-dev gstreamer1.0-gtk3
+        sudo apt-get install libgstreamer-plugins-base1.0-dev gstreamer1.0-gl
+        sudo apt-get install libxvidcore-dev libx264-dev
+        sudo apt-get install python3-dev python3-numpy python3-pip
+        sudo apt-get install libtbb2 libtbb-dev libdc1394-22-dev
+        sudo apt-get install libv4l-dev v4l-utils
+        sudo apt-get install libopenblas-dev libatlas-base-dev libblas-dev
+        sudo apt-get install liblapack-dev gfortran libhdf5-dev
+        sudo apt-get install libprotobuf-dev libgoogle-glog-dev libgflags-dev
+        sudo apt-get install protobuf-compiler
 fi
 
 
 # Install opencv
-export OPENCV_VERSION="4.4.0"
+export OPENCV_VERSION="4.8.0"
 wget https://github.com/opencv/opencv/archive/${OPENCV_VERSION}.zip && unzip ${OPENCV_VERSION}.zip
 cd opencv-${OPENCV_VERSION}
 mkdir build
 cd build
-cmake -D CMAKE_BUILD_TYPE=RELEASE -D CMAKE_INSTALL_PREFIX=/usr/local -D INSTALL_PYTHON_EXAMPLES=OFF -D BUILD_EXAMPLES=OFF -D ENABLE_NEON=ON -D ENABLE_VFPV3=ON -D WITH_GTK=ON ..
+cmake -D ENABLE_NEON=OFF -D ENABLE_VFPV3=OFF -D WITH_OPENMP=ON -D WITH_OPENCL=OFF -D BUILD_TIFF=ON -D WITH_FFMPEG=ON -D WITH_TBB=ON -D BUILD_TBB=ON -D BUILD_TESTS=OFF -D WITH_EIGEN=OFF -D WITH_GSTREAMER=ON -D WITH_V4L=ON -D WITH_LIBV4L=ON -D WITH_VTK=OFF -D WITH_QT=OFF -D OPENCV_ENABLE_NONFREE=ON -D INSTALL_C_EXAMPLES=OFF -D INSTALL_PYTHON_EXAMPLES=OFF -D BUILD_NEW_PYTHON_SUPPORT=ON -D BUILD_opencv_python3=TRUE -D OPENCV_FORCE_LIBATOMIC_COMPILER_CHECK=1 -D OPENCV_GENERATE_PKGCONFIG=ON -D BUILD_EXAMPLES=OFF ..
 
 #
 # -----------------------------------------------------------------------------------------------------------------------
 #
 
 # Add swap memory: 
-read -p "[Info] You must increase swap size. Change the line CONF_SWAPSIZE=100 to CONF_SWAPSIZE=1024, save and exit. Press Enter to continue." CONTINUE
+read -p "[Info] You must increase swap size. Change the line CONF_SWAPSIZE=200 to CONF_SWAPSIZE=1024, save and exit. Press Enter to continue." CONTINUE
 sudo nano /etc/dphys-swapfile
 sudo service dphys-swapfile restart
 

@@ -75,8 +75,7 @@ std::string hostIP = ""; // host IP
 std::string TEST_IMG_FOLDER = "";  // Images to be classified by the CNN. Set an empty value ("") for using real images 
 std::string MAX_CNN_IMAGES = "50";  // maximum number of images to be classified by the CNN
 
-
-int SEC_TEST = 30; // take 1 frame each SEC_TEST seconds --> set to 30
+int IMG_BG_PERIOD = 30; // take 1 frame each IMG_BG_PERIOD seconds --> set to 30
 double last_frame; // instant of last captured frame
 std::string FRAMES_TEST_FOLDER = "./DATASET/FRAMES/";
 std::string FRAMES_tmp_FOLDER = "./DATASET/FRAMES_tmp/";
@@ -125,7 +124,8 @@ static bool readConfiguration(std::string CONFIG_FILE){
      if (configdata.find("EVENT_GAP") != configdata.end())        EVENT_GAP = std::atoi(configdata["EVENT_GAP"].c_str());
      if (configdata.find("MAX_RUNTIME") != configdata.end())      MAX_RUNTIME = std::atof(configdata["MAX_RUNTIME"].c_str());   
      if (configdata.find("CALIB_PERIOD") != configdata.end())     CALIB_PERIOD = std::atof(configdata["CALIB_PERIOD"].c_str()); 
-     if (configdata.find("NIMGS_CAL") != configdata.end())        NIMGS_CAL = std::atoi(configdata["NIMGS_CAL"].c_str());   
+     if (configdata.find("NIMGS_CAL") != configdata.end())        NIMGS_CAL = std::atoi(configdata["NIMGS_CAL"].c_str());  
+     if (configdata.find("IMG_BG_PERIOD") != configdata.end())    IMG_BG_PERIOD = std::atoi(configdata["IMG_BG_PERIOD"].c_str()); 
      //if (configdata.find("NCAL_RESUME") != configdata.end())      n_calib = std::atoi(configdata["NCAL_RESUME"].c_str());    
      if (configdata.find("FRAMES_FOLDER") != configdata.end())    FRAMES_FOLDER = std::string( configdata["FRAMES_FOLDER"] );    
      if (configdata.find("CNN_FILE") != configdata.end())         CNN_FILE = std::string( configdata["CNN_FILE"] ); 
@@ -138,6 +138,7 @@ static bool readConfiguration(std::string CONFIG_FILE){
                   TARGET_LABELS.push_back( std::atoi(target_l[i].c_str()) );
        }    
      if (configdata.find("CAMERA_NAME") != configdata.end())       CAMERA_NAME = std::string( configdata["CAMERA_NAME"] ); 
+     if (configdata.find("MQTT") != configdata.end())              MQTT = (bool) std::atoi(configdata["MQTT"].c_str());// != 0;
      if (configdata.find("DST_EMAIL") != configdata.end())         DST_EMAIL = std::string( configdata["DST_EMAIL"] );     
      
     return false;
@@ -197,67 +198,14 @@ std::vector<int> OPENCV_TFLITE_CNN_INFERENCE(std::vector<std::string> classes, s
 
 
 
-/* Capture frames:
- * two alternatives: CaptureFrames (from opencv) or Capture_Raspistill (from raspstill RPi tool)
+/* Functions: Capture frames:
+ *  Alternatives: 
+ *   - from OpenCV (only for buster)
+ *   - from raspistill, raspivid (buster),
+ *   - from libcamera-still or libcamera-vid tools (bookworm).
+ *   - from libcamera c++ library (buster)
+ *       *if camera is open with libCamera.cpp functions, we can not use libcamera tools at the same time
  */
-std::string CaptureFrames(VideoCapture cap, int N, std::string FRAMES_FOLDER="./") {
-    /* Read N frames from camera and save them into FRAMES_FOLDER, with a timestamp 
-     * Return: prefix name for the images (for future classification) */
-    
-     std::string dt_s = getTimeString();
-     double start = time_time();
-     bool bSuccess;  
-     Mat frame;
-     for (int n = 0; n < N; n++) {
-          bSuccess = cap.read( frame ); // read a new frame from video
-          if (!bSuccess) { std::cout << BOLDYELLOW << "[ERROR] Reading frames" << RESET << std::endl; return "ERR"; }
-          cv::imwrite(FRAMES_FOLDER+dt_s+"_"+"img_"+std::to_string(n)+".jpg", frame);
-          if (verbose) std::cout << FRAMES_FOLDER+dt_s+"_"+std::to_string(n)+".jpg" << std::endl;
-      }
-     if (verbose) std::cout << "capture time " << 1000*(time_time()-start ) << std::endl;
-     //std::cout << "[INFO] ("+dt_s+") Recorded " << N << " frames" << std::endl;
-     return dt_s;
-}
-
-std::string Capture_Raspistill(int post_capture, std::string FRAMES_FOLDER="./"){
-    /* Read frames from camera during post_capture seconds, and save them into FRAMES_FOLDER, with a timestamp 
-     * Return: prefix name for the images (for future classification) */
-    
-    std::string dt_s = getTimeString();
-    double start = time_time();
-    //   If a time-lapse value of 0 is entered (-tl 0), the application will take pictures as fast as possible
-    std::string command_raspistill = "raspistill --nopreview -w "+std::to_string(WIDTH)+" -h "+std::to_string(HEIGHT)+" -t "+std::to_string(1000*post_capture)+" -tl "+std::to_string(0)+" -o "+FRAMES_FOLDER+dt_s+"_"+"img%04d.jpg";
-    if (verbose) {
-        std::cout << "capturing " << post_capture << "seconds at maximum raspistill speed (-t TIME -t0 0) " << std::endl;
-        std::cout << command_raspistill.c_str() << std::endl; }
-    execCommand(command_raspistill.c_str());
-    if (verbose) std::cout << "capture time " << 1000*(time_time()-start ) << std::endl;
-    std::cout << "[INFO] ("+dt_s+") Recorded frames (" << post_capture <<  " sec)" << std::endl;
-    
-    return dt_s;
-}
-
-std::string CaptureFrames_noSensor(VideoCapture cap, int N, std::string FRAMES_FOLDER="./"){
-    /* Read N frames from camera (if the PIR is not activated) and save them into FRAMES_FOLDER, with a timestamp 
-     * Return: prefix name for the images (for future classification) */
-     
-     std::string dt_s = getTimeString();
-     bool bSuccess;  
-     Mat frame;
-     for (int n = 0; n < N; n++) {
-          while (gpioRead(INPUT_PIN)) {
-               std::cout << "PIR detection...waiting..." << std::endl; 
-               time_sleep(1);
-          }
-          bSuccess = cap.read( frame ); // read a new frame from video
-          if (!bSuccess) { std::cout << BOLDYELLOW << "[ERROR] Reading frames" << RESET << std::endl; return "ERR"; }
-          cv::imwrite(FRAMES_FOLDER+dt_s+"_"+"img_"+std::to_string(n)+".jpg", frame);
-          if (verbose) std::cout << FRAMES_FOLDER+dt_s+"_"+std::to_string(n)+".jpg" << std::endl;
-      }
-     return dt_s;
-}  
-
-
 std::string checkIP(){
     /* Check if there is IP, or return '' otherwise */
     std::string IP = execCommand("hostname -I"); 
@@ -279,7 +227,6 @@ int publishMQTT(std::string IP, std::string topic,  std::string msg, std::string
     return 0;
 }
 
-
 //https://stackoverflow.com/questions/30078756/super-fast-median-of-matrix-in-opencv-as-fast-as-matlab
 double medianMat(cv::Mat img){
     cvtColor(img, img, cv::COLOR_BGR2GRAY);//CV_BGR2GRAY);
@@ -289,35 +236,7 @@ double medianMat(cv::Mat img){
     std::nth_element(vecFromMat.begin(), vecFromMat.begin() + vecFromMat.size() / 2, vecFromMat.end());
     return vecFromMat[vecFromMat.size() / 2];
 }
-int Check_Night(VideoCapture cap, int median_T = 10, int std_T = 20) {
-    /* Read a frame from camera and check if it is night */
     
-     std::string dt_s = getTimeString();
-     bool bSuccess; 
-     int night = 0; 
-     Mat frame;
-     bSuccess = cap.read( frame ); // read a new frame from video
-     if (!bSuccess) { std::cout << BOLDYELLOW << "[ERROR] Reading frame" << RESET << std::endl; return -1; }
-     
-     cv::Scalar mean_img, std_img;
-     cv::meanStdDev(frame, mean_img, std_img);
-     if (verbose) std::cout << "Night??  std: " << std_img[0] << ",  median: " << medianMat(frame) << std::endl;
-     if (medianMat(frame) < median_T && std_img[0] < std_T) {
-            night = 1; 
-            std::cout << "[INFO] ("<< getTimeString() << ") Night detected... ";
-            if (MQTT) publishMQTT(hostIP, "info", "Night detected."+getTimeString(), "pi", "pipasswd");
-            cv::imwrite(FRAMES_tmp_FOLDER+dt_s+"_NIGHT"+".jpg", frame); 
-            if (verbose) std::cout << FRAMES_tmp_FOLDER+dt_s+"_NIGHT"+".jpg" << std::endl; 
-            for (int n = 0; n < 10; n++) {  // following readings are also black
-                bSuccess = cap.read( frame );
-                //cv::imwrite(FRAMES_tmp_FOLDER+"Night_"+dt_s+"_"+std::to_string(n)+".jpg", frame); std::cout << "  saved " << "Night_"+dt_s+"_"+std::to_string(n)+".jpg" << std::endl;
-            }                
-    }
-     if (verbose and night) std::cout << dt_s+" --> NIGHT" << std::endl;
-     return night;
-}
-
-
 int sendEmail(std::string dst_addr, std::string subject, std::string body, std::string attachment){
     /* Send email. It requires previous e-mail configuration */
     
@@ -380,37 +299,6 @@ void CALIBRATE(std::string config){
     std::cout << "[INFO] ("+getTimeString()+") ...calibration #" << n_calib << " finished. " << std::endl;   
     }
     
-void create_dataset(VideoCapture* Camera) {
-
-    /* (1) Create dataset folder for last experience (only if there are enough images) */
-    
-    // *) Close camera before launching script (script may need to take more images and conflict would happen)
-    if (Camera->isOpened())  Camera->release(); 
-    
-    std::cout << "[INFO] Moving data to new folder ("+std::to_string(n_calib)+") -- and maybe taking additional data --" << std::endl; 
-    //std::string command = "./scripts/create_new_img_folder.sh "+std::to_string(NIMGS_CAL)+" "+std::to_string(n_calib)+" "+std::to_string(INPUT_PIN)+" "+std::to_string(n_calib-4);
-    std::string command = "./scripts/create_new_img_folder.sh "+std::to_string(NIMGS_CAL)+" "+std::to_string(n_calib)+" "+std::to_string(INPUT_PIN);//+" "+std::to_string(n_calib-4); // cambiado para tests.
-    if (verbose) std::cout << command.c_str() << std::endl;
-    std::string result = execCommand(command.c_str(), 1024, true); 
-  
-    //error = std::atoi(result.substr(0,1).c_str());   if (error)  std::cout << "[WARNING] Not enough images. << std::endl;  
-    
-    Camera->open(0); // *) re-open camera and set parameters
-	Camera->set(CAP_PROP_FRAME_WIDTH, WIDTH);
-    Camera->set(CAP_PROP_FRAME_HEIGHT, HEIGHT);
-	Camera->set(CAP_PROP_FPS, READ_FPS);
-    
-    // *) Script may have accessed to GPIO INPUT_PIN, so let's reconfigure it again: 
-    gpioSetMode(INPUT_PIN, PI_INPUT);
-    gpioSetPullUpDown(INPUT_PIN, PI_PUD_DOWN); // Sets a pull-down.
-    
-    
-    /* (2) Create training dataset from various folders */
-    std::cout << "[INFO] Copying random data from last folders (beginning from "+std::to_string(n_calib)+") to training folder" << std::endl;     
-    command = "python scripts/Copy_imgs_to_calibrate.py --N "+std::to_string(NIMGS_CAL);
-    if (verbose) std::cout << command.c_str() << std::endl;
-    result = execCommand(command.c_str(), 1024, true); 
-    }
     
 bool check(std::vector<std::string> classes, std::vector<int> result_classes, std::string date_string, float PERC=0.75){
     /* Check if there are more than PERC % classifications in result_classes which belong to TARGET_LABELS */

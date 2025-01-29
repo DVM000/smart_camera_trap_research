@@ -1,43 +1,38 @@
 #! /bin/bash
 
-# DVM. 2020
-# based on https://qengineering.eu/install-tensorflow-2.1.0-on-raspberry-pi-4.html
+# DVM. 2024
+# based on https://qengineering.eu/install-tensorflow-on-raspberry-64-os.html
 
 # get a fresh start
 sudo apt-get update
 sudo apt-get upgrade
 
+# install pip3
+sudo apt-get install git python3-pip
+
+echo "[Info] You may need to edit pip.conf file. Add this lines:" 
+echo -e " \033[0;93m [Info] You may need to edit pip.conf file. Add this lines: \033[0m " 
+echo -e " \033[0;93m [global] \033[0m " 
+echo -e " \033[0;93m break-system-packages=true \033[0m" 
+read -p "Press Enter to continue." CONTINUE
+sudo nano /etc/pip.conf
+
+# install correct version protobuf
+sudo -H pip3 install --upgrade protobuf==3.20.0
+
 # remove old versions, if not placed in a virtual environment (let pip search for them)
 sudo pip uninstall tensorflow
 sudo pip3 uninstall tensorflow
 
-# install the dependencies (if not already onboard)
-if [ ]; then
-sudo apt-get install gfortran
-#sudo apt-get install libhdf5-dev libc-ares-dev libeigen3-dev
-sudo apt-get install libatlas-base-dev libopenblas-dev libblas-dev
-sudo apt-get install liblapack-dev cython
-sudo pip3 install pybind11
-#sudo pip3 install h5py
-fi
+# download wheel
+git clone https://github.com/Qengineering/Tensorflow-io.git
+cd Tensorflow-io
+sudo -H pip3 install tensorflow_io_gcs_filesystem-0.23.1-cp311-cp311-linux_aarch64.whl 
+cd ~
 
-# for loading hdf5 models:
-sudo apt-get install libhdf5-dev libc-ares-dev libeigen3-dev
-sudo pip3 install h5py
+# install TensorFlow 2.14.0
+sudo -H pip3 install --upgrade tensorflow==2.14.0
 
-# download the wheel
-wget https://github.com/Qengineering/Tensorflow-Raspberry-Pi/raw/master/tensorflow-2.1.0-cp37-cp37m-linux_armv7l.whl
 
-# install TensorFlow
-sudo -H pip3 install tensorflow-2.1.0-cp37-cp37m-linux_armv7l.whl
 
-# Change h5py version according to warning shown when 'import tensorflow'
-python3 -c 'import tensorflow'
-HDF5_VERSION=1.10.6 pip3 install --no-binary=h5py h5py==3.1.0
 
-pip3 install protobuf==3.20.0  # this may be needed (RPi Zero)
-
-sudo pip3 install -r requirements_TF.txt
-
-# and complete the installation by rebooting
-reboot

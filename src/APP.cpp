@@ -4,6 +4,7 @@
  */
 
 #include "common_functions.cpp"
+#include "LibCamera.cpp"
 
 /* APPLICATION VARIABLES */
 int readValue = 0;
@@ -51,17 +52,11 @@ int main(int argc, char *argv[])
     /* ------------------------------------------------------------------
     *  OPEN THE CAMERA, ready for detections
     * -----------------------------------------------------------------*/
-    double start = time_time();
-    VideoCapture Camera(0);
-	//set camera params
-	Camera.set(CAP_PROP_FRAME_WIDTH, WIDTH);
-    Camera.set(CAP_PROP_FRAME_HEIGHT, HEIGHT);
-	Camera.set(CAP_PROP_FPS, READ_FPS);	
-
-    if (verbose) std::cout << "Time to open the camera: " << 1000.0*(time_time()-start) << std::endl;
-    //Open camera
-	if (!Camera.isOpened()) { std::cout << BOLDYELLOW << "[ERROR] Cannot open the camera" << RESET << std::endl;  return 1; }  
-    else {  std::cout << "[INFO] Camera Open" << std::endl;   }
+    LibCamera cam;
+    uint32_t stride;
+    uint32_t W = (uint32_t) WIDTH; 
+    uint32_t H = (uint32_t) HEIGHT;
+    openLibcamera(&cam, &W, &H, &stride, READ_FPS);
 
         
     /* ------------------------------------------------------------------
@@ -76,7 +71,7 @@ int main(int argc, char *argv[])
     /* ------------------------------------------------------------------
     *  OPEN GPIO
     * -----------------------------------------------------------------*/
-    start = time_time();
+    double start = time_time();
     if (gpioInitialise() < 0) { std::cout << BOLDYELLOW << "[ERROR] pigpio initialisation failed" << RESET << std::endl; return 1; }
     if (verbose) std::cout << "Time to open GPIO: " << 1000.0*(time_time()-start) << std::endl;
      
@@ -146,7 +141,7 @@ int main(int argc, char *argv[])
         if (!LED) gpioTerminate(); // Release resources to reduce power consumption  
         
         // 1- Read frames
-        date_string = CaptureFrames(Camera, READ_FPS*POST_CAPTURE, FRAMES_FOLDER); 
+        date_string = CaptureFrames_libcamera(&cam, READ_FPS*POST_CAPTURE, WIDTH, HEIGHT, stride, FRAMES_FOLDER); 
             
         // 2- Perform CNN classification
         result_classes = OPENCV_TFLITE_CNN_INFERENCE( classes, date_string );
@@ -180,14 +175,14 @@ int main(int argc, char *argv[])
             
         }
       
-      // Capture image if SEC_TEST time gap is exceeded
-      if  (time_time() - last_frame > SEC_TEST)  {
+      // Capture image if IMG_BG_PERIOD time gap is exceeded
+      if  (time_time() - last_frame > IMG_BG_PERIOD)  {
             last_frame = time_time();
-            date_string = CaptureFrames(Camera, 1, FRAMES_TEST_FOLDER); 
+            date_string = CaptureFrames_libcamera(&cam, 1, WIDTH, HEIGHT, stride, FRAMES_TEST_FOLDER);  
             //if ( date_string == "ERR") { return 1; } 
             }
             
-      // Calibration check based on CALIB_PERIOD
+      // Calibration check based on CALIB_PERIOD:
       // if time gap from last calibration (or calibration attempt) exceeds CALIB_PERIOD, CALIBRATE again (if needed)
       if  (time_time() - last_calib > CALIB_PERIOD*60*CALIB_PERIOD_red)  {
             std::cout << "\n[INFO] Checking if calibration is needed... " << std::endl;
@@ -202,7 +197,7 @@ int main(int argc, char *argv[])
             }
             else {
                 //1- Read frames
-                date_string = CaptureFrames_noSensor(Camera, READ_FPS*10, FRAMES_FOLDER); // take images during 10 seconds (only while PIR is off )
+                date_string = CaptureFrames_noSensor_libcamera(&cam, READ_FPS*10, WIDTH, HEIGHT, stride, FRAMES_FOLDER); // take images during 10 seconds (only while PIR is off )
                 // 2- CNN
                 result_classes = OPENCV_TFLITE_CNN_INFERENCE( classes, date_string );
                 if (verbose)  for (auto i : result_classes) std::cout << i << std::endl;
@@ -211,7 +206,7 @@ int main(int argc, char *argv[])
             }
             if (recalib){
                     if (MQTT) publishMQTT(hostIP, "info", "Starting re-calibration.", "pi", "pipasswd");
-                    create_dataset(&Camera);
+                    create_dataset_libcamera(&cam, &stride);
                     std::cout << "[INFO] Training..." << std::endl;     
                     CALIBRATE("calibrate1");
                     std::cout << "[INFO] Training done." << std::endl; 
@@ -225,13 +220,13 @@ int main(int argc, char *argv[])
         
       // Check night (every 15 min)
       if ((int)(time_time() - start_PIR) % (15*60) == 0 || (int)(time_time() - start_PIR + 2*READ_DELAY ) % (15*60) == 0)  {
-          int night = Check_Night(Camera); 
+          int night = Check_Night_libcamera(&cam, WIDTH, HEIGHT, stride);
           if ( night == -1) { night = 1; } 
           
           while(night == 1) {                                    // if night detected, sleep 15 min
                 std::cout << "Waiting 15 min" << std::endl;
                 time_sleep(15*60);
-                night = Check_Night(Camera); 
+                night = Check_Night_libcamera(&cam, WIDTH, HEIGHT, stride, true);  
                 if ( night == -1) { night = 1; } //return 1; } 
                 if ( night == 0) { 
                     std::cout << "[INFO] Resumed after night, waiting trigger" << std::endl;
@@ -247,7 +242,7 @@ int main(int argc, char *argv[])
    gpioTerminate();
 
    /* Stop Camera, release resources */   
-   Camera.release();
+   closeLibcamera(&cam);
     
     std::cout << "[INFO] Correctly finished. Bye!" << std::endl;
 

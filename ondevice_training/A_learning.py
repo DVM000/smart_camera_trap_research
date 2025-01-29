@@ -129,7 +129,7 @@ if not FROM_H5 and FROM_CKPT:
 for layer in model.layers[:Nbaselayers]:
   layer.trainable =  False
 
-optimizer = eval('tf.keras.optimizers.'+OPT)
+optimizer = eval('tf.keras.optimizers.legacy.'+OPT)
 
 from tensorflow.keras import backend as K
 f_logits = not FROM_H5
@@ -142,9 +142,9 @@ else:
   metr =[ tf.keras.metrics.CategoricalAccuracy(name='accuracy'), # Top1-acc
           tf.keras.metrics.TopKCategoricalAccuracy(k=5, name='Top5_acc')]
 
-model.compile(optimizer=tf.keras.optimizers.RMSprop(lr=5e-3, decay=1e-5), loss= lossfun, metrics= metr )
+model.compile(optimizer=tf.keras.optimizers.legacy.RMSprop(lr=5e-3, decay=1e-5), loss= lossfun, metrics= metr )
 
-
+                
 ## -- Fine-tune the network from layer FINETUNE_FROM_LAYER -- ##
 # ------------------------------------------------------------------------ #
 if EPOCHS:
@@ -199,7 +199,7 @@ if EPOCHS:
 
 
 # --------------------------------------------------------------------------------
-## CONVERT TO .pb FILE 
+## CONVERT TO .h5 and .pb FILES 
 # --------------------------------------------------------------------------------
 if not CONVERTING:
     sys.exit(0)
@@ -213,68 +213,27 @@ np.random.seed(0)
 model.save(H5_file)  # need to save model, otherwise model.predict() does not work (But .pb model may work?)
 print('\n[Info] Saved {}'.format(H5_file)) 
 
-tf_version = int( tf.__version__.split('.')[0] ) 
-tf.keras.backend.clear_session()
-tf.keras.backend.set_learning_phase(0)  
+## FREEZE MODEL 
+from tensorflow.python.framework.convert_to_constants import convert_variables_to_constants_v2
+# Check if eager execution is enabled (necessary for model freezing):
+#if not tf.executing_eagerly():
+#    tf.compat.v1.enable_eager_execution()
 
-# Needed to correctly generate the TensorFlow Graph in TensorFlow 2.x:
-if tf_version > 1:   
-  tf.compat.v1.disable_eager_execution()
+# Create a concrete function for the model
+full_model = tf.function(lambda x: model(x))
+concrete_func = full_model.get_concrete_function(
+    tf.TensorSpec(model.inputs[0].shape, model.inputs[0].dtype)
+)
 
+# Convert training variables into constants
+frozen_func = convert_variables_to_constants_v2(concrete_func)
+frozen_graph = frozen_func.graph.as_graph_def()
 
-## FREEZE MODEL TO TF FROZEN GRAPH
-## ----------------------------------------------------------------
-def freeze_session(session, keep_var_names=None, output_names=None, clear_devices=True):
-    """
-    Freezes the state of a session into a pruned computation graph.
+# Save frozen graph into .pb file
+with tf.io.gfile.GFile(pb_folder+'/'+pb_filename, "wb") as f:
+    f.write(frozen_graph.SerializeToString())
 
-    Creates a new computation graph where variable nodes are replaced by
-    constants taking their current value in the session. The new graph will be
-    pruned so subgraphs that are not necessary to compute the requested
-    outputs are removed.
-    @param session The TensorFlow session to be frozen.
-    @param keep_var_names A list of variable names that should not be frozen,
-                          or None to freeze all the variables in the graph.
-    @param output_names Names of the relevant graph outputs.
-    @param clear_devices Remove the device directives from the graph for better portability.
-    @return The frozen graph definition.
-    """
-    from tensorflow.python.framework.graph_util import convert_variables_to_constants
-    graph = session.graph
-    #init = tf.global_variables_initializer() # ** anadido esto
-    #session.run(init) # **
-    with graph.as_default():
-        freeze_var_names = list(set(v.op.name for v in tf.compat.v1.global_variables()).difference(keep_var_names or []))
-        output_names = output_names or []
-        output_names += [v.op.name for v in tf.compat.v1.global_variables()]
-        # Graph -> GraphDef ProtoBuf
-        input_graph_def = graph.as_graph_def()
-        if clear_devices:
-            for node in input_graph_def.node:
-                node.device = ""
-        frozen_graph = convert_variables_to_constants(session, input_graph_def,
-                                                      output_names, freeze_var_names)
-        return frozen_graph
-
-
-## LOAD KERAS MODEL
-## ----------------------------------------------------------------
-model = tf.keras.models.load_model(H5_file) 
-print('[Info] Model correctly loaded')
-SIZE = model.inputs[0].shape[1]
-
-
-## FREEZE MODEL AND SAVE IT AS .PB FILE
-## ----------------------------------------------------------------
-if tf_version > 1:    session = tf.compat.v1.keras.backend.get_session() 
-else:                 session = tf.keras.backend.get_session() 
-
-frozen_graph = freeze_session(session,
-                              output_names=[out.op.name for out in model.outputs])
-
-tf.compat.v1.train.write_graph(frozen_graph, pb_folder, pb_filename, as_text=False)
 print('\n[Info] Saved {}{}'.format(pb_folder,pb_filename))
 print('---------------------------------------------------------- \n')
-
 
 sys.exit(0)
