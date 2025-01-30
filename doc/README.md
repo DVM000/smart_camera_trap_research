@@ -21,8 +21,7 @@ You can use ``pinout`` command to verify the GPIO pin numbering on the Raspberry
 
 # Operating System
 
-The prototype was tested on Rasbian GNU/Linux 10 (buster) kernel Linux 6.1.61-v8+ aarch64 32 bits (legacy).
-We are working on an enhanced version using Raspberry Pi Operating System (bookworm) aarch64 64 bits.
+This branch was tested on Debian GNU/Linux 12 (bookworm) kernel Linux 6.6.62+rpt-rpi-v8 64 bits.
 
 # Summary of implemented functionalities
 
