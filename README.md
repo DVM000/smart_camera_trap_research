@@ -34,7 +34,8 @@ Compatible with Raspberry Pi devices. Tested, in particular, on Raspberry Pi 3B,
 git clone https://www.github.com/DVM000/smart_camera_trap_research.git 
 ```
 
- - **Note**: this code was developed for `buster` operating system (tested on kernel Linux aarch64 32 bits). If you are using new releases, please change repository branch: `git checkout bookworm-OS` (tested on kernel Linux aarch64 64 bits)
+ - **Note**: *tested on Rasbian GNU/Linux 10 (buster) kernel Linux 6.1.61-v8+ aarch64 32 bits with OpenCV version 4.4.0 and TensorFlow 2.1.0 (Python 3.7)*. 
+For bookworm operating system, please change repository branch: `git checkout bookworm-OS` *(tested on Debian GNU/Linux 12 (bookworm) kernel Linux 6.6.62+rpt-rpi-v8 64 bits with OpenCV version 4.8.0 and TensorFlow 2.14.0 (Python 3.11.2))*
  - Installation scripts assume that code is located at `/home/pi/smart_camera_trap_research/`
  - You must give execution permission to all scripts.
  - This code was developed for `buster`
@@ -56,8 +57,6 @@ cd ..
 
 Enable camera using `raspi-config`.
 
-
-*Note: tested on Rasbian GNU/Linux 10 (buster) kernel Linux 6.1.61-v8+ aarch64 32 bits with OpenCV version 4.4.0 and TensorFlow 2.1.0 (Python 3.7)*
 
 
 ## Configuration
