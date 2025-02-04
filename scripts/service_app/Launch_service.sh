@@ -19,9 +19,9 @@ if [ "$td" != "NONE" ]; then
 fi
 
 # 1) Create dataset:
-raspi-gpio set $oP op dh
+pinctrl set $oP op dh
 [ -d DATASET/img_data_000/A ] || python scripts/Calibration_fromCamera.py --pin_PIR $iP
-raspi-gpio set $oP op dl
+pinctrl set $oP op dl
 
 # 2) Launch App:
 export DATE_=`date +%Y-%m-%d_%T`
